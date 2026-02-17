@@ -148,6 +148,49 @@
     </script>
 </body>
 </html>
+            resultCard.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`https://info-silk-ten.vercel.app/get?uid=${uid}`);
+                const data = await response.json();
+
+                if (data && data.AccountInfo) {
+                    const info = data.AccountInfo;
+                    
+                    document.getElementById('playerName').innerText = info.AccountName;
+                    document.getElementById('displayUid').innerText = "UID: " + uid;
+                    document.getElementById('playerLevel').innerText = "LVL " + info.AccountLevel;
+                    document.getElementById('likes').innerHTML = `<i class="fas fa-heart mr-1"></i> ${info.AccountLikes}`;
+                    document.getElementById('credit').innerHTML = `<i class="fas fa-shield-alt mr-1"></i> ${data.creditScoreInfo?.creditScore || '100'}`;
+                    
+                    // Avatar
+                    document.getElementById('playerAvatar').src = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${info.AccountAvatarId}.png`;
+                    document.getElementById('playerAvatar').onerror = function() {
+                        this.src = `https://ui-avatars.com/api/?name=${info.AccountName}&background=0D8ABC&color=fff`;
+                    };
+
+                    // Signature with Color Parsing
+                    const rawBio = data.socialinfo?.signature || "No Bio Set";
+                    document.getElementById('signature').innerHTML = parseFFSignature(rawBio);
+
+                    loader.classList.add('hidden');
+                    resultCard.classList.remove('hidden');
+                } else {
+                    throw new Error("Invalid UID!");
+                }
+            } catch (err) {
+                loader.classList.add('hidden');
+                errorBox.classList.remove('hidden');
+                document.getElementById('errorText').innerText = err.message;
+            }
+        }
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
             errorBox.classList.add('hidden');
             loader.classList.remove('hidden');
 
