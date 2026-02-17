@@ -3,19 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF Account Finder</title>
+    <title>FF UID Finder</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: white; }
         .container { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 350px; text-align: center; border: 1px solid #334155; }
-        h2 { margin-bottom: 20px; color: #38bdf8; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #334155; border-radius: 10px; background: #0f172a; color: white; box-sizing: border-box; outline: none; }
+        h2 { margin-bottom: 20px; color: #38bdf8; letter-spacing: 1px; }
+        
+        select, input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #334155; border-radius: 10px; background: #0f172a; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        select:focus, input:focus { border-color: #38bdf8; }
+        
         button { width: 100%; padding: 12px; background: #38bdf8; border: none; color: #0f172a; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        button:hover { background: #0ea5e9; transform: scale(1.02); }
-        #result { margin-top: 25px; display: none; padding: 15px; border-radius: 15px; background: #334155; }
-        .avatar { width: 110px; height: 110px; border-radius: 50%; border: 4px solid #38bdf8; margin-bottom: 15px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
-        .stats { font-size: 16px; margin: 8px 0; display: flex; justify-content: space-between; border-bottom: 1px solid #475569; padding-bottom: 5px; }
-        .val { color: #38bdf8; font-weight: bold; }
-        .loader { color: #94a3b8; font-size: 14px; margin-top: 10px; display: none; }
+        button:hover { background: #0ea5e9; transform: translateY(-2px); }
+        
+        #result { margin-top: 25px; display: none; padding: 20px; border-radius: 15px; background: #334155; animation: slideUp 0.4s ease; }
+        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #38bdf8; margin-bottom: 15px; object-fit: cover; background: #0f172a; }
+        
+        .info-box { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px; background: #1e293b; border-radius: 8px; }
+        .label { color: #94a3b8; font-size: 14px; }
+        .value { color: #38bdf8; font-weight: bold; }
+        
+        #status { margin-top: 15px; font-size: 14px; color: #f43f5e; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -24,62 +36,72 @@
     <h2>Account Finder</h2>
     
     <select id="region">
-        <option value="ind">India (IND)</option>
         <option value="bd">Bangladesh (BD)</option>
+        <option value="ind">India (IND)</option>
+        <option value="sg">Singapore (SG)</option>
         <option value="me">Middle East (ME)</option>
     </select>
     
-    <input type="text" id="uid" placeholder="Enter UID (e.g. 5791471936)">
-    <button onclick="searchAccount()">Search Info</button>
+    <input type="text" id="uidInput" placeholder="Enter UID (e.g. 5791471936)">
+    <button onclick="fetchData()">Search Info</button>
 
-    <div id="loading" class="loader">Fetching data, please wait...</div>
+    <div id="status"></div>
 
     <div id="result">
         <img id="avatar" class="avatar" src="" alt="Avatar">
-        <div class="stats"><span>Level:</span> <span id="level" class="val"></span></div>
-        <div class="stats"><span>Likes:</span> <span id="likes" class="val"></span></div>
+        <div class="info-box">
+            <span class="label">Account Level</span>
+            <span id="level" class="value">--</span>
+        </div>
+        <div class="info-box">
+            <span class="label">Account Likes</span>
+            <span id="likes" class="value">--</span>
+        </div>
     </div>
 </div>
 
 <script>
-    async function searchAccount() {
-        const uid = document.getElementById('uid').value;
+    async function fetchData() {
+        const uid = document.getElementById('uidInput').value;
         const region = document.getElementById('region').value;
+        const status = document.getElementById('status');
         const resultDiv = document.getElementById('result');
-        const loader = document.getElementById('loading');
 
-        if (!uid) { alert("Please enter a UID"); return; }
+        if (!uid) {
+            status.innerText = "Please enter a UID!";
+            return;
+        }
 
-        // UI Reset
+        status.innerText = "Fetching data...";
+        status.style.color = "#38bdf8";
         resultDiv.style.display = "none";
-        loader.style.display = "block";
 
         try {
-            // Using a CORS Proxy to bypass browser restrictions
-            const proxy = "https://api.allorigins.win/get?url=";
-            const apiUrl = encodeURIComponent(`https://like-api-xi-six.vercel.app/like?server_name=${region}&uid=${uid}`);
-            
-            const response = await fetch(proxy + apiUrl);
-            const rawData = await response.json();
-            const data = JSON.parse(rawData.contents);
+            // CORS Proxy ব্যবহার করা হচ্ছে যাতে ব্রাউজার ব্লক না করে
+            const apiUrl = `https://like-api-xi-six.vercel.app/like?server_name=${region}&uid=${uid}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+
+            const response = await fetch(proxyUrl);
+            const dataWrap = await response.json();
+            const data = JSON.parse(dataWrap.contents);
 
             if (data && data.AccountAvatarId) {
-                // Image URL
-                const imgId = data.AccountAvatarId;
-                document.getElementById('avatar').src = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${imgId}.png`;
-                
-                // Set Stats
-                document.getElementById('level').innerText = data.AccountLevel || "N/A";
-                document.getElementById('likes').innerText = data.AccountLikes || "0";
+                // ইমেজ এবং তথ্য সেট করা
+                const avatarId = data.AccountAvatarId;
+                document.getElementById('avatar').src = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${avatarId}.png`;
+                document.getElementById('level').innerText = data.AccountLevel || 'N/A';
+                document.getElementById('likes').innerText = data.AccountLikes || '0';
 
-                loader.style.display = "none";
+                status.innerText = "";
                 resultDiv.style.display = "block";
             } else {
-                throw new Error("Invalid Response");
+                status.innerText = "Account not found or Invalid UID!";
+                status.style.color = "#f43f5e";
             }
-        } catch (err) {
-            loader.innerText = "Error: Account not found or API down.";
-            console.error(err);
+        } catch (error) {
+            status.innerText = "Server error! Please try again.";
+            status.style.color = "#f43f5e";
+            console.error(error);
         }
     }
 </script>
