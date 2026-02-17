@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UID Account Finder</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 12px; background-color: #007bff; border: none; color: white; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 25px; display: none; border-top: 2px solid #eee; pt: 20px; }
+        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #007bff; margin-bottom: 15px; object-fit: cover; }
+        .info { font-size: 18px; color: #555; margin: 5px 0; }
+        .error { color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Account Finder</h2>
+    <input type="text" id="uidInput" placeholder="Enter UID here...">
+    <button onclick="fetchAccountData()">Search Info</button>
+
+    <div id="result">
+        <img id="avatarImg" class="avatar" src="" alt="Avatar">
+        <div class="info"><strong>Level:</strong> <span id="accLevel"></span></div>
+        <div class="info"><strong>Likes:</strong> <span id="accLikes"></span></div>
+    </div>
+    <p id="errorMessage" class="error"></p>
+</div>
+
+<script>
+    async function fetchAccountData() {
+        const uid = document.getElementById('uidInput').value;
+        const resultDiv = document.getElementById('result');
+        const errorPara = document.getElementById('errorMessage');
+
+        if (!uid) {
+            alert("Please enter a UID first!");
+            return;
+        }
+
+        // Reset UI
+        resultDiv.style.display = "none";
+        errorPara.innerText = "";
+
+        try {
+            const response = await fetch(`https://info-silk-ten.vercel.app/get?uid=${uid}`);
+            const data = await response.json();
+
+            if (data && data.AccountAvatarId) {
+                // Avatar image URL build
+                const avatarUrl = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${data.AccountAvatarId}.png`;
+                
+                document.getElementById('avatarImg').src = avatarUrl;
+                document.getElementById('accLevel').innerText = data.AccountLevel || 'N/A';
+                document.getElementById('accLikes').innerText = data.AccountLikes || '0';
+
+                resultDiv.style.display = "block";
+            } else {
+                errorPara.innerText = "Account not found or invalid UID.";
+            }
+        } catch (error) {
+            errorPara.innerText = "Error fetching data. Please try again later.";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>
