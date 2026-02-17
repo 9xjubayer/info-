@@ -3,68 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UID Account Finder</title>
+    <title>FF Account Info Finder</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
-        button { width: 100%; padding: 12px; background-color: #007bff; border: none; color: white; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background-color: #0056b3; }
-        #result { margin-top: 25px; display: none; border-top: 2px solid #eee; pt: 20px; }
-        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #007bff; margin-bottom: 15px; object-fit: cover; }
-        .info { font-size: 18px; color: #555; margin: 5px 0; }
-        .error { color: red; margin-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: #16213e; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 380px; text-align: center; border: 1px solid #0f3460; }
+        select, input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f3460; background: #1a1a2e; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #e94560; border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #ff4d6d; }
+        #result { margin-top: 25px; display: none; animation: fadeIn 0.5s; }
+        .avatar { width: 130px; height: 130px; border-radius: 50%; border: 5px solid #e94560; margin-bottom: 15px; background: #0f3460; }
+        .data-row { background: #0f3460; padding: 10px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; }
+        .label { color: #999; }
+        .value { font-weight: bold; color: #e94560; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Account Finder</h2>
-    <input type="text" id="uidInput" placeholder="Enter UID here...">
-    <button onclick="fetchAccountData()">Search Info</button>
+<div class="card">
+    <h2>Player Stats</h2>
+    
+    <select id="regionInput">
+        <option value="ind">India (IND)</option>
+        <option value="bd">Bangladesh (BD)</option>
+        <option value="sg">Singapore (SG)</option>
+        <option value="me">Middle East (ME)</option>
+        <option value="br">Brazil (BR)</option>
+    </select>
+    
+    <input type="text" id="uidInput" placeholder="Enter Player UID (e.g. 5791471936)">
+    <button onclick="fetchData()">Get Account Details</button>
 
     <div id="result">
         <img id="avatarImg" class="avatar" src="" alt="Avatar">
-        <div class="info"><strong>Level:</strong> <span id="accLevel"></span></div>
-        <div class="info"><strong>Likes:</strong> <span id="accLikes"></span></div>
+        <div class="data-row">
+            <span class="label">Account Level:</span>
+            <span id="accLevel" class="value"></span>
+        </div>
+        <div class="data-row">
+            <span class="label">Account Likes:</span>
+            <span id="accLikes" class="value"></span>
+        </div>
     </div>
-    <p id="errorMessage" class="error"></p>
+    <p id="errorMsg" style="color: #ff4d6d; font-size: 14px; margin-top: 10px;"></p>
 </div>
 
 <script>
-    async function fetchAccountData() {
+    async function fetchData() {
+        const region = document.getElementById('regionInput').value;
         const uid = document.getElementById('uidInput').value;
         const resultDiv = document.getElementById('result');
-        const errorPara = document.getElementById('errorMessage');
+        const errorMsg = document.getElementById('errorMsg');
 
         if (!uid) {
-            alert("Please enter a UID first!");
+            alert("UID দিন!");
             return;
         }
 
         // Reset UI
         resultDiv.style.display = "none";
-        errorPara.innerText = "";
+        errorMsg.innerText = "Loading data...";
 
         try {
-            const response = await fetch(`https://info-silk-ten.vercel.app/get?uid=${uid}`);
+            // New API Link
+            const apiUrl = `https://like-api-xi-six.vercel.app/like?server_name=${region}&uid=${uid}`;
+            const response = await fetch(apiUrl);
             const data = await response.json();
 
+            // API থেকে AccountAvatarId, AccountLevel এবং AccountLikes খুঁজে বের করা
             if (data && data.AccountAvatarId) {
-                // Avatar image URL build
                 const avatarUrl = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${data.AccountAvatarId}.png`;
                 
                 document.getElementById('avatarImg').src = avatarUrl;
                 document.getElementById('accLevel').innerText = data.AccountLevel || 'N/A';
                 document.getElementById('accLikes').innerText = data.AccountLikes || '0';
 
+                errorMsg.innerText = "";
                 resultDiv.style.display = "block";
             } else {
-                errorPara.innerText = "Account not found or invalid UID.";
+                errorMsg.innerText = "Error: Player not found or API error.";
             }
         } catch (error) {
-            errorPara.innerText = "Error fetching data. Please try again later.";
+            errorMsg.innerText = "সার্ভার সমস্যা! আবার চেষ্টা করুন।";
             console.error(error);
         }
     }
