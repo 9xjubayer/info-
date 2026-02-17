@@ -1,81 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Finder</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .box { background: #1e293b; padding: 25px; border-radius: 15px; width: 320px; text-align: center; border: 1px solid #334155; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: none; outline: none; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #38bdf8; border: none; color: #000; font-weight: bold; border-radius: 8px; cursor: pointer; }
-        #result { margin-top: 20px; display: none; }
-        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #38bdf8; margin-bottom: 15px; }
-        .info { background: #334155; padding: 10px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: white; }
+        .container { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 350px; text-align: center; border: 1px solid #334155; }
+        h2 { margin-bottom: 20px; color: #38bdf8; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #334155; border-radius: 10px; background: #0f172a; color: white; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 12px; background: #38bdf8; border: none; color: #0f172a; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #0ea5e9; }
+        #result { margin-top: 25px; display: none; }
+        .avatar { width: 120px; height: 120px; border-radius: 50%; border: 4px solid #38bdf8; margin-bottom: 15px; background: #0f172a; }
+        .info { background: #334155; padding: 10px; margin: 8px 0; border-radius: 10px; display: flex; justify-content: space-between; font-size: 16px; }
         .val { color: #38bdf8; font-weight: bold; }
-        #error { color: #f87171; margin-top: 10px; font-size: 14px; }
+        #loading { display: none; color: #94a3b8; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h3>Account Finder</h3>
-    <input type="text" id="uidInput" placeholder="Enter UID (e.g. 5791471936)">
-    <button onclick="getData()">Search Info</button>
-    <p id="error"></p>
+<div class="container">
+    <h2>Account Finder</h2>
+    <input type="text" id="uidInput" placeholder="এখানে UID দিন (যেমন: 5791471936)">
+    <button onclick="fetchAccount()">Search Info</button>
+    <div id="loading">অপেক্ষা করুন...</div>
 
     <div id="result">
         <img id="avatarImg" class="avatar" src="" alt="Avatar">
-        <div class="info"><span>Level:</span> <span id="level" class="val"></span></div>
-        <div class="info"><span>Likes:</span> <span id="likes" class="val"></span></div>
+        <div class="info"><span>Level:</span> <span id="accLevel" class="val"></span></div>
+        <div class="info"><span>Likes:</span> <span id="accLikes" class="val"></span></div>
     </div>
 </div>
 
 <script>
-    async function getData() {
+    async function fetchAccount() {
         const uid = document.getElementById('uidInput').value;
         const resultDiv = document.getElementById('result');
-        const errorPara = document.getElementById('error');
+        const loader = document.getElementById('loading');
         
-        if(!uid) return alert("UID দিন");
+        if (!uid) {
+            alert("দয়া করে একটি UID দিন!");
+            return;
+        }
 
-        errorPara.innerText = "খুঁজছি, দয়া করে অপেক্ষা করুন...";
+        // রিসেট এবং লোডিং দেখানো
         resultDiv.style.display = "none";
+        loader.style.display = "block";
 
         try {
-            // CORS Proxy ব্যবহার করে আপনার API কল করা হচ্ছে
-            const proxy = "https://api.allorigins.win/get?url=";
-            const targetApi = `https://info-silk-ten.vercel.app/get?uid=${uid}`;
+            // আপনার দেওয়া লিঙ্কটি প্রক্সির মাধ্যমে কল করা হচ্ছে
+            const proxyUrl = "https://api.allorigins.win/get?url=";
+            const targetUrl = `https://info-silk-ten.vercel.app/get?uid=${uid}`;
             
-            const response = await fetch(proxy + encodeURIComponent(targetApi));
+            const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
             const dataWrap = await response.json();
             
-            // API থেকে পাওয়া ডাটা (যা স্ট্রিং আকারে থাকে) সেটাকে JSON এ রূপান্তর
+            // ডাটা স্ট্রিং থেকে JSON-এ রূপান্তর
             const data = JSON.parse(dataWrap.contents);
 
-            if(data && data.AccountAvatarId) {
-                // Avatar Image Show
+            if (data && data.AccountAvatarId) {
+                // ছবি শো করা
                 const avatarId = data.AccountAvatarId;
-                document.getElementById('avatarImg').src = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${avatarId}.png`;
+                const imgUrl = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${avatarId}.png`;
                 
-                // Other Info Show
-                document.getElementById('level').innerText = data.AccountLevel || "N/A";
-                document.getElementById('likes').innerText = data.AccountLikes || "0";
+                document.getElementById('avatarImg').src = imgUrl;
+                document.getElementById('accLevel').innerText = data.AccountLevel || 'N/A';
+                document.getElementById('accLikes').innerText = data.AccountLikes || '0';
 
-                errorPara.innerText = "";
+                loader.style.display = "none";
                 resultDiv.style.display = "block";
             } else {
-                errorPara.innerText = "Account found but data is missing.";
+                alert("তথ্য পাওয়া যায়নি বা UID ভুল!");
+                loader.style.display = "none";
             }
-        } catch (err) {
-            errorPara.innerText = "Error: UID ভুল অথবা সার্ভার বন্ধ।";
-            console.error(err);
+        } catch (error) {
+            console.error(error);
+            alert("সার্ভার থেকে ডাটা আনতে সমস্যা হচ্ছে। আবার চেষ্টা করুন।");
+            loader.style.display = "none";
         }
     }
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
