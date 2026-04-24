@@ -90,78 +90,84 @@
     </div>
 
     <script>
-        function parseFFSignature(text) {
-            if (!text) return "No Bio Set";
-            let formatted = text
-                .replace(/\[b\]/gi, '<span class="ff-bold">')
-                .replace(/\[i\]/gi, '<span class="ff-italic">')
-                .replace(/\[c\]/gi, '')
-                .replace(/\[([A-Fa-f0-9]{6})\]/g, '</span><span style="color:#$1">');
-            return '<span>' + formatted + '</span>';
-        }
+function parseFFSignature(text) {
+    if (!text) return "No Bio Set";
+    let formatted = text
+        .replace(/\[b\]/gi, '<span class="ff-bold">')
+        .replace(/\[i\]/gi, '<span class="ff-italic">')
+        .replace(/\[c\]/gi, '')
+        .replace(/\[([A-Fa-f0-9]{6})\]/g, '</span><span style="color:#$1">');
+    return '<span>' + formatted + '</span>';
+}
 
-        async function fetchData() {
-            const uid = document.getElementById('uidInput').value;
-            const resultCard = document.getElementById('resultCard');
-            const loader = document.getElementById('loading');
-            const errorBox = document.getElementById('errorBox');
+async function fetchData() {
+    const uid = document.getElementById('uidInput').value;
+    const resultCard = document.getElementById('resultCard');
+    const loader = document.getElementById('loading');
+    const errorBox = document.getElementById('errorBox');
 
-            if (!uid) return;
+    if (!uid) return;
 
-            resultCard.classList.add('hidden');
-            errorBox.classList.add('hidden');
-            loader.classList.remove('hidden');
+    resultCard.classList.add('hidden');
+    errorBox.classList.add('hidden');
+    loader.classList.remove('hidden');
 
-            try {
-                const response = await fetch(`https://mg-aqeel-info-v52.vercel.app/get?uid={uid}&region=bd`);
-const data = await response.json();
+    try {
+        const response = await fetch(`https://player-info-by-ckrpro.vercel.app/get?uid=${uid}`);
+        const data = await response.json();
 
+        console.log(data);
 
-                if (data && data.AccountInfo) {
-                    const info = data.AccountInfo;
-                    const guild = data.GuildInfo;
-                    
-                    document.getElementById('playerName').innerText = info.AccountName;
-                    document.getElementById('displayUid').innerText = "UID: " + uid;
-                    document.getElementById('playerLevel').innerText = "LVL " + info.AccountLevel;
-                    document.getElementById('brPoints').innerText = info.BrRankPoint || '0';
-                    document.getElementById('csPoints').innerText = info.CsRankPoint || '0';
-                    document.getElementById('likes').innerText = info.AccountLikes;
-                    
-                    // Guild Update
-                    if (guild && guild.GuildName) {
-                        document.getElementById('guildName').innerText = guild.GuildName;
-                        document.getElementById('guildMembers').innerText = `${guild.GuildMember}/${guild.GuildCapacity}`;
-                        document.getElementById('guildLevel').innerText = guild.GuildLevel;
-                    } else {
-                        document.getElementById('guildName').innerText = "No Guild";
-                        document.getElementById('guildMembers').innerText = "0/0";
-                        document.getElementById('guildLevel').innerText = "0";
-                    }
+        // ✅ MAIN FIX: সব logic try এর ভিতরে আনা হয়েছে
+        if (data && data.AccountInfo) {
+            const info = data.AccountInfo;
+            const guild = data.GuildInfo;
 
-                    // Avatar
-                    document.getElementById('playerAvatar').src = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${info.AccountAvatarId}.png`;
-                    document.getElementById('playerAvatar').onerror = function() {
-                        this.src = `https://ui-avatars.com/api/?name=${info.AccountName}&background=0D8ABC&color=fff`;
-                    };
+            document.getElementById('playerName').innerText = info.AccountName;
+            document.getElementById('displayUid').innerText = "UID: " + uid;
+            document.getElementById('playerLevel').innerText = "LVL " + info.AccountLevel;
+            document.getElementById('brPoints').innerText = info.BrRankPoint || '0';
+            document.getElementById('csPoints').innerText = info.CsRankPoint || '0';
+            document.getElementById('likes').innerText = info.AccountLikes || '0';
 
-                    // Signature
-                    const rawBio = data.socialinfo?.signature || "No Bio Set";
-                    document.getElementById('signature').innerHTML = parseFFSignature(rawBio);
-
-                    loader.classList.add('hidden');
-                    resultCard.classList.remove('hidden');
-                } else {
-                    throw new Error("Invalid UID or Player not found!");
-                }
-            } catch (err) {
-                loader.classList.add('hidden');
-                errorBox.classList.remove('hidden');
-                document.getElementById('errorText').innerText = err.message;
+            // ✅ Guild
+            if (guild && guild.GuildName) {
+                document.getElementById('guildName').innerText = guild.GuildName;
+                document.getElementById('guildMembers').innerText = `${guild.GuildMember}/${guild.GuildCapacity}`;
+                document.getElementById('guildLevel').innerText = guild.GuildLevel;
+            } else {
+                document.getElementById('guildName').innerText = "No Guild";
+                document.getElementById('guildMembers').innerText = "0/0";
+                document.getElementById('guildLevel').innerText = "0";
             }
+
+            // ✅ Avatar
+            const avatar = document.getElementById('playerAvatar');
+            avatar.src = `https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/${info.AccountAvatarId}.png`;
+
+            avatar.onerror = function () {
+                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(info.AccountName)}&background=0D8ABC&color=fff`;
+            };
+
+            // ✅ Signature
+            const rawBio = data.socialinfo?.signature || "No Bio Set";
+            document.getElementById('signature').innerHTML = parseFFSignature(rawBio);
+
+            loader.classList.add('hidden');
+            resultCard.classList.remove('hidden');
+
+        } else {
+            throw new Error("Invalid UID or Player not found!");
         }
 
-        window.onload = fetchData;
-    </script>
+    } catch (err) {
+        loader.classList.add('hidden');
+        errorBox.classList.remove('hidden');
+        document.getElementById('errorText').innerText = err.message;
+    }
+}
+
+window.onload = fetchData;
+</script>
 </body>
 </html>
